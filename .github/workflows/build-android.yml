@@ -1,9 +1,9 @@
 name: Build Godot Android APK
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
-  workflow_dispatch:
 
 jobs:
   export:
@@ -12,10 +12,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Export APK with crystal-bit/godot-export
+      - name: Export with crystal-bit/godot-export
         uses: crystal-bit/godot-export@v3
         with:
-          godot-version: 4.2.2 # Ganti sesuai versi Godot project kamu
+          godot-version: 4.2.2
           export-template-version: 4.2.2
           preset: "Android"
           output: "build/android/gamefer.apk"
