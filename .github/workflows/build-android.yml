@@ -8,54 +8,28 @@ on:
   workflow_dispatch:
 
 env:
-  GODOT_VERSION: 4.2.2
+  GODOT_VERSION: 4.3.1
   EXPORT_NAME: gamefer
   PROJECT_PATH: .
 
 jobs:
-  export-android:
-    name: Android Export
-    runs-on: ubuntu-20.04
-    container:
-      image: barichello/godot-ci:4.2.2
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          lfs: true
-
-      - name: Setup
-        run: |
-          mkdir -v -p ~/.local/share/godot/export_templates/
-          mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
-
-      - name: Android Build
-        run: |
-          mkdir -v -p build/android
-          cd $PROJECT_PATH
-          godot --headless --verbose --export-debug "Android" ../build/android/$EXPORT_NAME.apk
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-${{ env.EXPORT_NAME }}
-          path: build/android/
-          retention-days: 14
-
-  # Alternative menggunakan firebelley/godot-export
-  export-android-alternative:
-    name: Android Export (Alternative)
+  # Menggunakan approach yang lebih simple dengan Docker
+  export-android-docker:
+    name: Android Export (Docker)
     runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.3.1
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           lfs: true
 
-      - name: Check if export_presets.cfg exists
+      - name: Setup Android Export
         run: |
+          # Create export_presets.cfg if it doesn't exist
           if [ ! -f "export_presets.cfg" ]; then
-            echo "export_presets.cfg not found. Creating basic Android export preset..."
+            echo "Creating export_presets.cfg..."
             cat > export_presets.cfg << 'EOF'
           [preset.0]
           
@@ -90,9 +64,86 @@ jobs:
           package/unique_name="com.gamefer.game"
           package/name="GameFer"
           package/signed=false
-          internet=false
+          permissions/internet=false
           EOF
           fi
+          
+          # Setup export templates
+          mkdir -v -p ~/.local/share/godot/export_templates/
+          mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+
+      - name: Build Android APK
+        run: |
+          mkdir -v -p build/android
+          cd $PROJECT_PATH
+          godot --headless --verbose --export-debug "Android" build/android/$EXPORT_NAME.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-${{ env.EXPORT_NAME }}
+          path: build/android/
+          retention-days: 14
+
+  # Alternative menggunakan firebelley/godot-export dengan debugging
+  export-android-alternative:
+    name: Android Export (Firebelley)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Debug - List project files
+        run: |
+          echo "=== Project structure ==="
+          ls -la
+          echo "=== Looking for project.godot ==="
+          find . -name "*.godot" -o -name "project.godot"
+
+      - name: Setup export_presets.cfg
+        run: |
+          echo "Creating export_presets.cfg..."
+          cat > export_presets.cfg << 'EOF'
+          [preset.0]
+          
+          name="Android"
+          platform="Android"
+          runnable=true
+          dedicated_server=false
+          custom_features=""
+          export_filter="all_resources"
+          include_filter=""
+          exclude_filter=""
+          export_path=""
+          encryption_include_filters=""
+          encryption_exclude_filters=""
+          encrypt_pck=false
+          encrypt_directory=false
+          
+          [preset.0.options]
+          
+          custom_template/debug=""
+          custom_template/release=""
+          gradle_build/use_gradle_build=false
+          gradle_build/export_format=0
+          gradle_build/min_sdk=""
+          gradle_build/target_sdk=""
+          architectures/armeabi-v7a=false
+          architectures/arm64-v8a=true
+          architectures/x86=false
+          architectures/x86_64=false
+          version/code=1
+          version/name="1.0"
+          package/unique_name="com.gamefer.game"
+          package/name="GameFer"
+          package/signed=false
+          permissions/internet=false
+          EOF
+          
+          echo "=== Created export_presets.cfg ==="
+          cat export_presets.cfg
 
       - name: Export Game
         id: export
@@ -102,10 +153,116 @@ jobs:
           godot_export_templates_download_url: https://github.com/godotengine/godot/releases/download/4.2.2-stable/Godot_v4.2.2-stable_export_templates.tpz
           relative_project_path: ./
           archive_output: true
+          export_debug: true
 
       - name: Upload Android APK
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: android-apk
-          path: ${{ steps.export.outputs.archive_directory }}/*android*
+          path: ${{ steps.export.outputs.archive_directory }}
+          retention-days: 14
+
+  # Manual approach yang lebih simple
+  export-android-manual:
+    name: Android Export (Manual)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget unzip
+
+      - name: Download Godot
+        run: |
+          wget -q https://github.com/godotengine/godot/releases/download/4.2.2-stable/Godot_v4.2.2-stable_linux.x86_64.zip
+          unzip Godot_v4.2.2-stable_linux.x86_64.zip
+          chmod +x Godot_v4.2.2-stable_linux.x86_64
+          sudo mv Godot_v4.2.2-stable_linux.x86_64 /usr/local/bin/godot
+
+      - name: Download Export Templates
+        run: |
+          wget -q https://github.com/godotengine/godot/releases/download/4.2.2-stable/Godot_v4.2.2-stable_export_templates.tpz
+          mkdir -p ~/.local/share/godot/export_templates/4.2.2.stable
+          unzip Godot_v4.2.2-stable_export_templates.tpz
+          mv templates/* ~/.local/share/godot/export_templates/4.2.2.stable/
+
+      - name: Debug Project Structure
+        run: |
+          echo "=== Current directory ==="
+          pwd
+          ls -la
+          echo "=== Looking for Godot project file ==="
+          find . -name "*.godot" -o -name "project.godot" | head -5
+
+      - name: Create Export Presets
+        run: |
+          cat > export_presets.cfg << 'EOF'
+          [preset.0]
+          
+          name="Android"
+          platform="Android"
+          runnable=true
+          dedicated_server=false
+          custom_features=""
+          export_filter="all_resources"
+          include_filter=""
+          exclude_filter=""
+          export_path="gamefer.apk"
+          encryption_include_filters=""
+          encryption_exclude_filters=""
+          encrypt_pck=false
+          encrypt_directory=false
+          
+          [preset.0.options]
+          
+          custom_template/debug=""
+          custom_template/release=""
+          gradle_build/use_gradle_build=false
+          gradle_build/export_format=0
+          gradle_build/min_sdk=""
+          gradle_build/target_sdk=""
+          architectures/armeabi-v7a=false
+          architectures/arm64-v8a=true
+          architectures/x86=false
+          architectures/x86_64=false
+          version/code=1
+          version/name="1.0"
+          package/unique_name="com.gamefer.game"
+          package/name="GameFer"
+          package/signed=false
+          permissions/internet=false
+          EOF
+
+      - name: Test Godot Installation
+        run: |
+          godot --version
+          godot --headless --list-export-presets
+
+      - name: Export Android APK
+        run: |
+          mkdir -p build
+          godot --headless --verbose --export-debug "Android" build/gamefer.apk || true
+          
+          echo "=== Export completed, checking results ==="
+          ls -la build/
+          if [ -f "build/gamefer.apk" ]; then
+            echo "APK created successfully"
+            file build/gamefer.apk
+          else
+            echo "APK not found, listing all files:"
+            find . -name "*.apk" 2>/dev/null || echo "No APK files found"
+          fi
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: android-manual-build
+          path: build/
           retention-days: 14
