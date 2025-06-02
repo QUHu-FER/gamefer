@@ -1,27 +1,69 @@
-name: Build Godot Android APK
+name: "Build Android"
 
 on:
-  workflow_dispatch:
   push:
-    branches: [main]
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+env:
+  GODOT_VERSION: 4.2.2
+  EXPORT_NAME: gamefer
+  PROJECT_PATH: .
 
 jobs:
-  export:
-    name: Export Android APK
-    runs-on: ubuntu-latest
+  export-android:
+    name: Android Export
+    runs-on: ubuntu-20.04
+    container:
+      image: barichello/godot-ci:4.2.2
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Export with crystal-bit/godot-export
-        uses: crystal-bit/godot-export@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          godot-version: 4.2.2
-          export-template-version: 4.2.2
-          preset: "Android"
-          output: "build/android/gamefer.apk"
+          lfs: true
 
-      - name: Upload APK Artifact
+      - name: Setup
+        run: |
+          mkdir -v -p ~/.local/share/godot/export_templates/
+          mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+
+      - name: Android Build
+        run: |
+          mkdir -v -p build/android
+          cd $PROJECT_PATH
+          godot --headless --verbose --export-debug "Android" ../build/android/$EXPORT_NAME.apk
+
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: gamefer-android-apk
-          path: build/android/gamefer.apk
+          name: android-${{ env.EXPORT_NAME }}
+          path: build/android/
+          retention-days: 14
+
+  # Alternative menggunakan firebelley/godot-export
+  export-android-alternative:
+    name: Android Export (Alternative)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Export Game
+        id: export
+        uses: firebelley/godot-export@v5.2.1
+        with:
+          godot_executable_download_url: https://downloads.tuxfamily.org/godotengine/4.2.2/Godot_v4.2.2-stable_linux.x86_64.zip
+          godot_export_templates_download_url: https://downloads.tuxfamily.org/godotengine/4.2.2/Godot_v4.2.2-stable_export_templates.tpz
+          relative_project_path: ./
+          archive_output: true
+
+      - name: Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: ${{ steps.export.outputs.archive_directory }}/*android*
+          retention-days: 14
