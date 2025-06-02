@@ -17,10 +17,10 @@ Game ini mengajak pemain untuk berpetualang di dunia yang penuh dengan tantangan
 ## 🖼️ Screenshot
 
 ### Menu Utama
-![Menu Utama](./readme(1).png)
+![Menu Utama](https://github.com/QUHu-FER/gamefer/blob/main/readme%20(1).png?raw=true)
 
 ### Gameplay
-![Gameplay](./readme(2).png)
+![Gameplay](https://github.com/QUHu-FER/gamefer/blob/main/readme%20(2).png?raw=true)
 
 ## 🎯 Cara Bermain
 
