@@ -8,34 +8,77 @@ on:
   workflow_dispatch:
 
 env:
-  GODOT_VERSION: 4.2.2
+  GODOT_VERSION: 4.3.1
   EXPORT_NAME: gamefer
   PROJECT_PATH: .
 
 jobs:
-  export-android:
-    name: Android Export
-    runs-on: ubuntu-20.04
+  # Menggunakan approach yang lebih simple dengan Docker
+  export-android-docker:
+    name: Android Export (Docker)
+    runs-on: ubuntu-latest
     container:
-      image: barichello/godot-ci:4.2.2
+      image: barichello/godot-ci:4.3.1
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           lfs: true
 
-      - name: Setup
+      - name: Setup Android Export
         run: |
+          # Create export_presets.cfg if it doesn't exist
+          if [ ! -f "export_presets.cfg" ]; then
+            echo "Creating export_presets.cfg..."
+            cat > export_presets.cfg << 'EOF'
+          [preset.0]
+          
+          name="Android"
+          platform="Android"
+          runnable=true
+          dedicated_server=false
+          custom_features=""
+          export_filter="all_resources"
+          include_filter=""
+          exclude_filter=""
+          export_path="build/android/gamefer.apk"
+          encryption_include_filters=""
+          encryption_exclude_filters=""
+          encrypt_pck=false
+          encrypt_directory=false
+          
+          [preset.0.options]
+          
+          custom_template/debug=""
+          custom_template/release=""
+          gradle_build/use_gradle_build=false
+          gradle_build/export_format=0
+          gradle_build/min_sdk=""
+          gradle_build/target_sdk=""
+          architectures/armeabi-v7a=false
+          architectures/arm64-v8a=true
+          architectures/x86=false
+          architectures/x86_64=false
+          version/code=1
+          version/name="1.0"
+          package/unique_name="com.gamefer.game"
+          package/name="GameFer"
+          package/signed=false
+          permissions/internet=false
+          EOF
+          fi
+          
+          # Setup export templates
           mkdir -v -p ~/.local/share/godot/export_templates/
           mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
 
-      - name: Android Build
+      - name: Build Android APK
         run: |
           mkdir -v -p build/android
           cd $PROJECT_PATH
-          godot --headless --verbose --export-debug "Android" ../build/android/$EXPORT_NAME.apk
+          godot --headless --verbose --export-debug "Android" build/android/$EXPORT_NAME.apk
 
-      - name: Upload Artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: android-${{ env.EXPORT_NAME }}
@@ -98,8 +141,8 @@ jobs:
         id: export
         uses: firebelley/godot-export@v5.2.1
         with:
-          godot_executable_download_url: https://downloads.tuxfamily.org/godotengine/4.2.2/Godot_v4.2.2-stable_linux.x86_64.zip
-          godot_export_templates_download_url: https://downloads.tuxfamily.org/godotengine/4.2.2/Godot_v4.2.2-stable_export_templates.tpz
+          godot_executable_download_url: https://github.com/godotengine/godot/releases/download/4.2.2-stable/Godot_v4.2.2-stable_linux.x86_64.zip
+          godot_export_templates_download_url: https://github.com/godotengine/godot/releases/download/4.2.2-stable/Godot_v4.2.2-stable_export_templates.tpz
           relative_project_path: ./
           archive_output: true
 
