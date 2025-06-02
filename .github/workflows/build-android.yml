@@ -6,38 +6,22 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  export:
+    name: Export Android APK
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Godot Engine
-        uses: firebelley/setup-godot@v2
+      - name: Export APK with crystal-bit/godot-export
+        uses: crystal-bit/godot-export@v3
         with:
-          godot-version: 4.2.2 # Ganti sesuai versi Godot kamu
-          use-mono: false
-
-      - name: Download Android Export Templates
-        run: |
-          mkdir -p ~/.local/share/godot/export_templates/4.2.2.stable
-          wget https://downloads.tuxfamily.org/godotengine/4.2.2/mono/Godot_v4.2.2-stable_export_templates.tpz -O templates.tpz
-          tar -xf templates.tpz -C ~/.local/share/godot/export_templates/4.2.2.stable --strip-components=1
-
-      - name: Set up JDK for Android
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Build APK
-        run: |
-          mkdir -p build/android
-          godot --headless --export-release "Android" build/android/game.apk
+          godot-version: 4.2.2 # Ganti sesuai versi Godot project kamu
+          export-template-version: 4.2.2
+          preset: "Android"
+          output: "build/android/gamefer.apk"
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: gamefer-android-apk
-          path: build/android/game.apk
+          path: build/android/gamefer.apk
