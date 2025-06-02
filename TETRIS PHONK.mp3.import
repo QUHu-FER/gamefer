@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://b3g5nxa5pwrtd"
+path="res://.godot/imported/TETRIS PHONK.mp3-5a96b2648c368999f1d68ec25a7aec69.mp3str"
+
+[deps]
+
+source_file="res://TETRIS PHONK.mp3"
+dest_files=["res://.godot/imported/TETRIS PHONK.mp3-5a96b2648c368999f1d68ec25a7aec69.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://if54cspyyfns"
+path="res://.godot/imported/Ost. Pou - Connect  Soundtrack Game Pou.mp3-24710eca3eb2364b80412efcf9b0d0e3.mp3str"
+
+[deps]
+
+source_file="res://Ost. Pou - Connect  Soundtrack Game Pou.mp3"
+dest_files=["res://.godot/imported/Ost. Pou - Connect  Soundtrack Game Pou.mp3-24710eca3eb2364b80412efcf9b0d0e3.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4
